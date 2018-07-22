@@ -1,52 +1,5 @@
 <?php
 
-function getSynonyms($word){
-  $hex = bin2hex($word);
-  $word = hex2bin($hex);
-  ob_start();
-  foreach(array("n", "v", "a", "r") as $type){
-    $command = "/usr/bin/wn $word -syns$type | grep -v -e '^$'";
-    passthru($command);;
-  }
-  $result = ob_get_clean();
-
-  if(!$result){
-    return array();
-  }
-
-  $result = explode("\n", $result);
-  
-  foreach($result as $i => &$r){
-    if(strpos($r, "Synonyms/") !== false){
-      unset ($result[$i]);
-      continue;
-    }else if(1 === preg_match('~[0-9]~', $r)){
-      unset ($result[$i]);
-      continue;
-    }else if(strpos($r, "-") !== false){
-      unset ($result[$i]);
-      continue;
-    }else if(strpos($r, "(") !== false){
-      unset ($result[$i]);
-      continue;
-    }else if ($r == ""){
-      unset ($result[$i]);
-      continue;
-    }else{
-      $r = preg_replace('/\s+/', '', $r);
-      $r = str_replace("=>", "", $r);
-    }
-  }
-
-  $result = implode(",", $result);
-  $result = explode(",", $result);
-  $result = array_flip($result);
-  unset ($result[$word]);
-  $result = array_flip($result);
-  $result = array_values($result);
-  return $result;
-}
-
 $text = $_POST['lyrics'];
 $text = trim($text, " \t");
 $text = str_replace(",", "@,", $text);
@@ -62,6 +15,9 @@ foreach($wordArr as $word){
   $order[] = $word;
 }
 
+$apikey = "BPfvxgDc6aRJVJ7F5naR";
+$language = "en_US";
+$endpoint = "http://thesaurus.altervista.org/thesaurus/v1";
 $synonyms = array();
 foreach($wordArr as $lyric){  
 
@@ -69,15 +25,30 @@ foreach($wordArr as $lyric){
     continue;
   }
 
-  $matches = getSynonyms($lyric);
-  if(count($matches) > 0){
-    $synonym = $matches[array_rand($matches)];
-    $synonyms[$lyric] = $synonym;
+  $ch = curl_init(); 
+  curl_setopt($ch, CURLOPT_URL, "$endpoint?word=".urlencode($lyric)."&language=$language&key=$apikey&output=json"); 
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+  $data = curl_exec($ch); 
+  $info = curl_getinfo($ch); 
+  curl_close($ch);
+  $data = json_decode($data, true)['response'];
+
+  if(is_array($data)){
+    foreach($data as $list){
+      foreach($list as $words){
+        $words = explode("|", $words['synonyms']);
+        $synonym = $words[array_rand($words)];
+        $synonym = preg_replace("/\([^)]+\)/","", $synonym);
+        $synonym = trim($synonym, " \t.");
+        $synonym = strtolower($synonym);
+        $synonyms[$lyric] = $synonym;
+      }
+    }
   }
+
+  
 }
 
-unset($synonyms['a']);
-unset($synonyms['it']);
 $ret = array();
 foreach($order as $original_lyric){
   if(isset($synonyms[$original_lyric])){
