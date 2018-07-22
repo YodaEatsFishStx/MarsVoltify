@@ -1,0 +1,27 @@
+<html>
+  <head>
+      <title>Mars Vota Lyrics Generator</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+      <script src="mv_lyrics.js"></script>
+  </head>
+  <body>
+    <div id="title">Enter your boring lyrics:</div>
+    <div>
+      <textarea rows="10" cols="30" id="input_lyrics">
+      </textarea>
+    </div>
+    <div>
+      <button type="button" id="submission">Mars Voltify</button>
+      <button type="button" id="reset">Clear</button>
+    </div>
+
+    <div id="thinking" style="display:none;">Delousing...</div>
+
+    <div id="results" style="display:none;">
+      <div id="result_title">Here are your totally sweet new lyrics:</div>
+      <div id="result_lyrics"></div>
+    </div>
+  </body>
+</html>
